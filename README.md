@@ -1,4 +1,16 @@
-##### 起源一次重构 & github 没有找到比较好的基于 request 的封装
+#### 起源一次重构 & github 没有找到比较好的基于 request 的封装
+
+#### 功能
+
+- 封装 wx.request
+- 全局 abort
+- 封装小程序的 auth 体系（微信 code
+- 封装 用户登录信息 在 getApp.userInfo
+
+##### TODO
+
+- wx.getStorageSync 有时候调用有问题，需 try catch 去 retry
+- request 同一个请求，第一次展示 wx.showLoading 第二次可以调用 wx.showNavigationBarLoading
 
 #### 使用
 
@@ -25,11 +37,6 @@ App({
 });
 ```
 
-##### 功能
-
-- 封装 wx.request
-- 全局 abort
-
 ##### 注意事项
 
 - 后端返回数据格式
@@ -37,8 +44,3 @@ App({
 ```js
 const result = { statusCode: 200, errMsg, data: { code: 200, data, msg } };
 ```
-
-##### TODO
-
-- wx.getStorageSync 有时候调用有问题，需 try catch 去 retry
-- request 同一个请求，第一次展示 wx.showLoading 第二次可以调用 wx.showNavigationBarLoading
