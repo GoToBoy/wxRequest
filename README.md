@@ -5,12 +5,13 @@
 - 封装 wx.request
 - 全局 abort
 - 封装小程序的 auth 体系（微信 code
-- 封装 用户登录信息 在 getApp.userInfo
+- 封装 用户登录信息 在 getApp().userInfo
 
-##### TODO
+#### TODO
 
 - wx.getStorageSync 有时候调用有问题，需 try catch 去 retry
 - request 同一个请求，第一次展示 wx.showLoading 第二次可以调用 wx.showNavigationBarLoading
+- wx.checkSession 的引入（有点苦力活了
 
 #### 使用
 
@@ -37,10 +38,14 @@ App({
 });
 ```
 
-##### 注意事项
+#### 注意事项
 
 - 后端返回数据格式
 
 ```js
 const result = { statusCode: 200, errMsg, data: { code: 200, data, msg } };
 ```
+
+#### 同类参考
+
+- [TypeScript 版本 weRequest](https://github.com/IvinWu/weRequest)

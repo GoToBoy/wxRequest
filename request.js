@@ -69,7 +69,7 @@ const doReqWithConfig = async args => {
       }
       //reLogin
       if ((code >= 10000 && code <= 10010)) {
-        wxs.showLoadingByTxt('重新登陆...');
+        wx.showLoading({title:'重新登陆...'});
         await doLogin();
         return doReqWithConfig(args);
       }

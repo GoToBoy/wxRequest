@@ -6,52 +6,78 @@ import requestTasks from './libs/requestTasks';
 
 const regeneratorRuntime = require('./libs/regenerator-runtime/runtime-module');
 
+const tryLoginCounts = 4;
+const LOGIN_API = 'auth/weixin/jscodeLogin'
+
 let userLoginPromisify = null;
-const LOGIN_API = 'auth/weixin/login'
+let reuqestTaskKey;
 
 
-module.exports = async function() {
-  //并发请求登录时候 
+function doLogin() {
+  
+  console.log(userLoginPromisify, !!userLoginPromisify, +new Date());
+  
   if (userLoginPromisify) return userLoginPromisify;
 
-  const { code } = await Promisify(wx.login)();
-
-  let reuqestTaskKey;
-
-  userLoginPromisify = Promisify(wx.request)({
-    url: getUrl(LOGIN_API),
-    data: { code },
-    method: 'POST',
-    header: {
-      'Content-Type': 'application/x-www-form-urlencoded'
+  const doTryLogin = (resolve)=>{
+    if(doLogin.tryCounts ? doLogin.tryCounts <= tryLoginCounts : true){
+      resolve(doLogin());
+      doLogin.tryCounts = (doLogin.tryCounts||0) +1;
+      return true;
+    } else{
+      return false;
     }
-  })
-    .then(result => {
-      console.log('user result', result);
-      const { data: wrapData, statusCode, errMsg } = result;
-      const { data, code, msg, message } = wrapData || {};
+  }
 
-      if (statusCode == 200 && code == 200) {
-        User.set(data);
-        userLoginPromisify = Promise.resolve(data);
-        return data;
-      }
-
-      report({
-        isShow: true,
-        url: 'user login',
-        msg: msg || message || errMsg,
-        code: code || statusCode
-      });
-    })
-    .catch(error => {
-      console.log(error, 'userlogin error');
-    })
-    .finally(() => {
-      requestTasks.remove(reuqestTaskKey);
+  const doCatchError = (err,msg)=>{
+    wx.showToast({ title: msg||'jscodeLogin登录失败', icon: 'none' });
+    report({
+      isShow: true,
+      url: LOGIN_API,
+      msg: JSON.stringify(err)
     });
+  }
 
-  reuqestTaskKey = requestTasks.add('user/login', userLoginPromisify.origin);
+  userLoginPromisify = new Promise(resolve => {
+    wx.login({
+      success(r) {
+        const wxReqInstance = wx.request({
+          url: getUrl(LOGIN_API),
+          data: { code: r.code },
+          method: 'POST',
+          header: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          success(result) {
+            console.log('user result', result);
 
-  return userLoginPromisify;
+            const { data: wrapData, statusCode, errMsg } = result;
+            const { data, code, msg, message } = wrapData || {};
+
+            if (statusCode == 200 && code == 200) {
+              User.set(data);
+              return resolve(data);
+            }
+
+            report({
+              isShow: true,
+              url: 'user login',
+              msg: msg || message || errMsg,
+              code: code || statusCode
+            });
+          },
+          fail(err) {
+            !doTryLogin(resolve) && doCatchError(err)
+          },
+          complete() {
+            requestTasks.remove(reuqestTaskKey);
+          }
+        });
+        reuqestTaskKey = requestTasks.add('user/login', wxReqInstance);
+      },
+      fail(e){
+        !doTryLogin(resolve) && doCatchError(e,'微信登陆失败～')
+      }
+    });
+  })
 };
